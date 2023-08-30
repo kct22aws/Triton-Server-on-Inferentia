@@ -8,10 +8,9 @@ Nvidia Triton Server is built to be a versatile machine learning serving platfor
 
 We will use a Nvidia Triton server docker container as the environment to launch the server. The Triton Server will be invoked within the docker container. In Inf1 instance, we need to clone [Triton server with Python backend](https://github.com/triton-inference-server/python_backend.git) repo for this example. The branch used for this example is r22.04. In the Inf1 instance, open a terminal and run the following command:
 
-<code>
+```
 git clone https://github.com/triton-inference-server/python_backend.git -b r22.04
-<button>Copy</button>
-</code>
+```
 
 This will create a python_backend directory in the Inf1 instance. For example, the absolute path to this directory may be: 
 
@@ -23,29 +22,25 @@ In this repo, we need to make a few edits for file [python_backend/inferentia/sc
 
 1. update libraries in [setup.sh](https://github.com/triton-inference-server/python_backend/blob/main/inferentia/scripts/setup.sh):
 
-<code>
+```
 apt update
 apt install rapidjson-dev zlib1g-dev libarchive-dev
 pip install cmake --upgrade 
-<button>Copy</button>
-</code>
+```
 
 2. specify repo tag explicitly when compiling a new virtual environment in [setup.sh](https://github.com/triton-inference-server/python_backend/blob/main/inferentia/scripts/setup.sh):
 
-<code>
+```
 cmake -DTRITON_ENABLE_GPU=ON -DCMAKE_INSTALL_PREFIX:PATH=`pwd`/install \
-
   -D TRITON_BACKEND_REPO_TAG=r22.04 \
   -D TRITON_COMMON_REPO_TAG=r22.04 \
   -D TRITON_CORE_REPO_TAG=r22.04  \
-  <button>Copy</button>
-  </code>
+```
 
 Now run the following docker command from your Inf1 instance CLI to launch a Triton inference container:
 
-<code>
+```
 docker run \
-
 --device /dev/neuron0 \
 --device /dev/neuron1 \
 --device /dev/neuron2 \
@@ -55,8 +50,7 @@ docker run \
 --shm-size=1g —ulimit memlock=-1 \
 -p 8000:8000 -p 8001:8001 -p 8002:8002 \
 --ulimit stack=67108864 -ti nvcr.io/nvidia/tritonserver:22.04-py3 \
-<button>Copy</button>
-</code>
+```
 
 This command will download a Nvidia image and run a docker container, from which you may launch a Triton server for inference. There are four NeuronDevices in Inf1.6xl, we specify --device according to number of NeuronDevices available in the instance (If you are using Inf1.xl or 2xl, then there is only one NeuronDevice and --device /dev/neuron0 would suffice). Also, we specify /mylib/udev which is used for passing Neuron parameters. 
 
@@ -71,10 +65,9 @@ root@7c9cbfab8dae:/opt/tritonserver#
 
 From the container, you will proceed to build a virtual environment with required libraries for Triton server. Run the following command:
 
-<code>
+```
 source /home/ubuntu/python_backend/inferentia/scripts/setup.sh -t
-<button>Copy</button>
-</code>
+```
 
 Once it is complete, this command will take you to the virtual environment (`test_conda_env`) it created: 
 
@@ -84,10 +77,9 @@ Once it is complete, this command will take you to the virtual environment (`tes
 
 To launch Triton server from this container, use the following command:
 
-<code>
+```
 tritonserver --model-repository /home/ubuntu/python_backend/models
-<button>Copy</button>
-</code>
+```
 
 You should expect to see all the models in  models directory. For example:
 
@@ -121,11 +113,10 @@ tensorflow-neuron 1.15.5.2.3.0.0
 
 In the same Inf1 instance, open another terminal for setting up the client. Before launching the Triton inference container, copy and place a client script in python_backend directory. Overall, for client setup, it is similar to how we set up the server, i.e., we first download a Triton client docker image, and then run it as a container. The command below downloads Triton client image and runs it:
 
-<code>
+```
 docker run -v /home/ubuntu/python_backend:/home/ubuntu/python_backend \ 
 -ti —net host nvcr.io/nvidia/tritonserver:22.04-py3-sdk /bin/bash \
-<button>Copy</button>
-</code>
+```
 
 Once this command is complete, you will be in the Triton client container:
 
@@ -139,16 +130,14 @@ From this directory, you will launch a Python script to run on Triton client con
 
 Once you are in the client container, you may run the following command to execute a benchmark routine for Resnet50 with randomized tensors. [The client script](./scripts/triton-http-client.py) may be launched with the following input parameters:
 
-<code>
+```
 python3 /home/ubuntu/python_backend/triton-http-client.py \
-
 --model_name rn50-16neuroncores-default \
 --batch_size 16 \
 --benchmark \
 --limit 30 \
 --num_threads 2 \
-<button>Copy</button>
-</code>
+```
 
 Since this example uses Inf1.6xl instance, which contains four NeuronDevices with a total of 16 NeuronCores, Triton server will split batch of input data such that every NeuronCore gets at least a sample of 1. This means that batch size must be equal to or more than number of NeuronCores. Therefore the example above set batch size of the request to 16. `—-benchmark` is used so that we may run this script to measure throughput and latency at the client side. `--limit` is set to 30 seconds for the benchmark routine. And we specified `—-num_threads`, which is the number of threads; each thread will keep generating http requests and send the request to server until the time set by `--limit` expires.
 
@@ -179,16 +168,13 @@ Thread 1 Latency p99 in ms: 38.33159923553466
 
 If you simply want to test the connection and execution of inference, you may use the following command:
 
-<code>
-<button>Copy</button>
+```
 python3 /home/ubuntu/python_backend/triton-http-client.py \
-
 --model_name rn50-16neuroncores-default \
 --batch_size 16 \
 --limit 30 \
 --num_threads 1 \
-
-</code>
+```
 
 Expected output should be similar to this:
 
