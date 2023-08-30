@@ -180,13 +180,14 @@ Thread 1 Latency p99 in ms: 38.33159923553466
 If you simply want to test the connection and execution of inference, you may use the following command:
 
 <code>
+<button>Copy</button>
 python3 /home/ubuntu/python_backend/triton-http-client.py \
 
 --model_name rn50-16neuroncores-default \
 --batch_size 16 \
 --limit 30 \
 --num_threads 1 \
-<button>Copy</button>
+
 </code>
 
 Expected output should be similar to this:
